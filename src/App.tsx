@@ -83,9 +83,9 @@ function App() {
       </div>
 
       <div className="relative max-w-8xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Controls Panel */}
-          <div className="xl:col-span-3 space-y-8">
+          <div className="xl:col-span-2 space-y-8">
             {/* Project Management */}
             <ProjectManager
               currentProject={currentProject}
@@ -143,8 +143,8 @@ function App() {
             />
           </div>
 
-          {/* Enhanced Live Preview */}
-          <div className="xl:col-span-2">
+          {/* Enhanced Live Preview - Now Sticky */}
+          <div className="xl:col-span-1">
             <div className="sticky top-8">
               <MenuPreview 
                 project={currentProject} 

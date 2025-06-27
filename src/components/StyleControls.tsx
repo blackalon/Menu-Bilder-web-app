@@ -70,7 +70,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({ style, onUpdateSty
   ];
 
   const ColorPicker = ({ colorKey, currentColor }: { colorKey: keyof MenuStyle, currentColor: string }) => (
-    <div className="absolute top-full left-0 mt-2 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-xl shadow-xl z-20 p-4 min-w-64">
+    <div className="absolute top-full left-0 mt-2 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-xl shadow-xl z-[9999] p-4 min-w-64">
       <div className="mb-3">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           اختر لون مخصص
@@ -113,7 +113,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({ style, onUpdateSty
   );
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-100 mb-6">
+    <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-100 mb-6 relative">
       <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
         <Palette className="w-5 h-5 text-purple-500" />
         تخصيص التصميم المتقدم
@@ -122,7 +122,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({ style, onUpdateSty
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Enhanced Colors */}
-        <div className="bg-gradient-to-br from-red-50/80 to-pink-50/80 backdrop-blur-sm p-4 rounded-xl border border-red-100 shadow-sm">
+        <div className="bg-gradient-to-br from-red-50/80 to-pink-50/80 backdrop-blur-sm p-4 rounded-xl border border-red-100 shadow-sm relative">
           <h3 className="font-semibold mb-3 text-red-800 flex items-center gap-2">
             <Palette className="w-4 h-4" />
             الألوان المتقدمة
@@ -438,7 +438,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({ style, onUpdateSty
       {/* Click outside to close color picker */}
       {showColorPicker && (
         <div 
-          className="fixed inset-0 z-10" 
+          className="fixed inset-0 z-[9998]" 
           onClick={() => setShowColorPicker(null)}
         />
       )}

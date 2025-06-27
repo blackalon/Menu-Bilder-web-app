@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MenuTemplate } from '../types/menu';
-import { Plus, Edit2, Trash2, Save, X, Upload, FileImage } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, FileImage, FolderOpen } from 'lucide-react';
 
 interface CustomTemplateManagerProps {
   customTemplates: MenuTemplate[];
@@ -22,6 +22,7 @@ export const CustomTemplateManager: React.FC<CustomTemplateManagerProps> = ({
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateFile, setTemplateFile] = useState<File | null>(null);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
 
   const handleSaveTemplate = () => {
     if (!templateName.trim()) return;
@@ -68,24 +69,66 @@ export const CustomTemplateManager: React.FC<CustomTemplateManagerProps> = ({
     }
   };
 
+  const handleMenuFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === 'application/json') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const menuData = JSON.parse(e.target?.result as string);
+          
+          // Create template from loaded menu
+          const template: MenuTemplate = {
+            id: `imported-${Date.now()}`,
+            name: menuData.name || 'منيو مستورد',
+            description: `منيو مستورد من ${menuData.restaurant?.name || 'مطعم'}`,
+            preview: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400',
+            layout: 'custom',
+            style: menuData.style || currentStyle,
+            isCustom: true,
+            createdBy: 'مستورد'
+          };
+
+          onAddTemplate(template);
+          setShowLoadDialog(false);
+          alert('تم استيراد المنيو بنجاح كقالب مخصص!');
+        } catch (error) {
+          alert('خطأ في قراءة ملف المنيو. تأكد من صحة تنسيق الملف.');
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      alert('يرجى اختيار ملف JSON صحيح.');
+    }
+  };
+
   return (
     <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-100 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-800">القوالب المخصصة</h2>
-        <button
-          onClick={() => setShowAddDialog(true)}
-          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md transform hover:scale-105"
-        >
-          <Plus className="w-4 h-4" />
-          إضافة قالب مخصص
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowLoadDialog(true)}
+            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center gap-2 shadow-md transform hover:scale-105"
+          >
+            <FolderOpen className="w-4 h-4" />
+            استيراد منيو
+          </button>
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md transform hover:scale-105"
+          >
+            <Plus className="w-4 h-4" />
+            إضافة قالب مخصص
+          </button>
+        </div>
       </div>
 
       {customTemplates.length === 0 ? (
         <div className="text-center py-8 bg-gradient-to-br from-gray-50/80 to-white/80 backdrop-blur-sm rounded-xl border border-gray-100">
           <FileImage className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-500">لم تقم بإنشاء أي قوالب مخصصة بعد</p>
-          <p className="text-sm text-gray-400 mt-1">ابدأ بإنشاء قالبك الأول</p>
+          <p className="text-sm text-gray-400 mt-1">ابدأ بإنشاء قالبك الأول أو استيراد منيو موجود</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -221,6 +264,57 @@ export const CustomTemplateManager: React.FC<CustomTemplateManagerProps> = ({
               >
                 <Save className="w-4 h-4" />
                 {editingTemplate ? 'تحديث' : 'حفظ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load Menu Dialog */}
+      {showLoadDialog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl max-w-md w-full mx-4 shadow-2xl border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-green-500" />
+                استيراد منيو كقالب مخصص
+              </h3>
+              <button
+                onClick={() => setShowLoadDialog(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-4">
+                  اختر ملف منيو محفوظ مسبقاً لإضافته كقالب مخصص
+                </p>
+                <label className="cursor-pointer bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center gap-2 shadow-md transform hover:scale-105 mx-auto w-fit">
+                  <Upload className="w-4 h-4" />
+                  اختر ملف المنيو (JSON)
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleMenuFileUpload}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-xs text-gray-500 mt-3">
+                  يجب أن يكون الملف بصيغة JSON من تصدير سابق للمنيو
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 justify-end mt-6">
+              <button
+                onClick={() => setShowLoadDialog(false)}
+                className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-md transform hover:scale-105"
+              >
+                إلغاء
               </button>
             </div>
           </div>

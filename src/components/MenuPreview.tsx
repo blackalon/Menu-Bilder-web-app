@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MenuProject, MenuItem } from '../types/menu';
-import { Move, RotateCcw, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Move, RotateCcw, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 
 interface MenuPreviewProps {
   project: MenuProject;
@@ -17,6 +17,7 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [itemPositions, setItemPositions] = useState<Record<string, { x: number; y: number; scale: number }>>({});
   const [previewScale, setPreviewScale] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const getGridClass = () => {
     if (style.layout === 'custom') return 'relative';
@@ -107,278 +108,549 @@ export const MenuPreview: React.FC<MenuPreviewProps> = ({
     return effects;
   };
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl overflow-hidden border border-gray-200">
-      <div className="sticky top-0 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 text-white px-4 py-3 z-10 flex items-center justify-between">
-        <h3 className="font-semibold flex items-center gap-2">
-          <Maximize2 className="w-4 h-4" />
-          معاينة المنيو المباشرة
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPreviewScale(Math.max(0.5, previewScale - 0.1))}
-            className="bg-white/20 hover:bg-white/30 p-1 rounded transition-colors"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <span className="text-sm bg-white/20 px-2 py-1 rounded">
-            {Math.round(previewScale * 100)}%
-          </span>
-          <button
-            onClick={() => setPreviewScale(Math.min(1.5, previewScale + 0.1))}
-            className="bg-white/20 hover:bg-white/30 p-1 rounded transition-colors"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-      
-      <div 
-        className="p-6 min-h-[500px] max-h-[600px] overflow-y-auto relative"
-        style={{ 
-          backgroundColor: style.backgroundColor,
-          color: style.textColor,
-          fontFamily: style.fontFamily,
-          transform: `scale(${previewScale})`,
-          transformOrigin: 'top left'
-        }}
-      >
-        {/* Background Image/Video */}
-        {style.backgroundImage && (
-          <div 
-            className={`absolute inset-0 bg-cover bg-center bg-no-repeat ${getEffectsClass()}`}
-            style={{ 
-              backgroundImage: `url(${style.backgroundImage})`,
-              opacity: style.backgroundOpacity / 100
-            }}
-          />
-        )}
-        {style.backgroundVideo && (
-          <video
-            className={`absolute inset-0 w-full h-full object-cover ${getEffectsClass()}`}
-            style={{ opacity: style.backgroundOpacity / 100 }}
-            autoPlay
-            muted
-            loop
-          >
-            <source src={style.backgroundVideo} type="video/mp4" />
-          </video>
-        )}
-
-        <div className="relative z-10">
-          {/* Header */}
-          <div className={`flex items-center mb-6 ${
-            restaurant.logoPosition === 'top-center' ? 'justify-center text-center' :
-            restaurant.logoPosition === 'top-right' ? 'justify-end text-right' : 'justify-start text-left'
-          }`}>
-            {restaurant.logo && (
-              <img 
-                src={restaurant.logo} 
-                alt="Logo" 
-                className="w-16 h-16 object-contain rounded-lg mr-4 shadow-md hover:shadow-lg transition-shadow duration-300"
-                style={{ borderRadius: `${style.borderRadius}px` }}
-              />
-            )}
-            <div>
-              <h1 
-                style={{ 
-                  fontSize: `${style.fontSize.title}px`,
-                  color: style.primaryColor
-                }}
-                className="font-bold leading-tight"
-              >
-                {restaurant.name || 'اسم المطعم'}
-              </h1>
-              {restaurant.description && (
-                <p className="text-sm opacity-80 mt-1">
-                  {restaurant.description}
-                </p>
-              )}
-              {restaurant.phone && (
-                <p className="text-sm opacity-70 mt-1">
-                  {restaurant.phone}
-                </p>
-              )}
-            </div>
+    <>
+      {/* Normal Preview */}
+      <div className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl overflow-hidden border border-gray-200 ${isFullscreen ? 'hidden' : ''}`}>
+        <div className="sticky top-0 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 text-white px-4 py-3 z-10 flex items-center justify-between">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Maximize2 className="w-4 h-4" />
+            معاينة المنيو المباشرة
+          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPreviewScale(Math.max(0.5, previewScale - 0.1))}
+              className="bg-white/20 hover:bg-white/30 p-1 rounded transition-colors"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="text-sm bg-white/20 px-2 py-1 rounded">
+              {Math.round(previewScale * 100)}%
+            </span>
+            <button
+              onClick={() => setPreviewScale(Math.min(1.5, previewScale + 0.1))}
+              className="bg-white/20 hover:bg-white/30 p-1 rounded transition-colors"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="bg-white/20 hover:bg-white/30 p-1 rounded transition-colors"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
           </div>
+        </div>
+        
+        <div 
+          className="p-6 min-h-[500px] max-h-[600px] overflow-y-auto relative"
+          style={{ 
+            backgroundColor: style.backgroundColor,
+            color: style.textColor,
+            fontFamily: style.fontFamily,
+            transform: `scale(${previewScale})`,
+            transformOrigin: 'top left'
+          }}
+        >
+          {/* Background Image/Video */}
+          {style.backgroundImage && (
+            <div 
+              className={`absolute inset-0 bg-cover bg-center bg-no-repeat ${getEffectsClass()}`}
+              style={{ 
+                backgroundImage: `url(${style.backgroundImage})`,
+                opacity: style.backgroundOpacity / 100
+              }}
+            />
+          )}
+          {style.backgroundVideo && (
+            <video
+              className={`absolute inset-0 w-full h-full object-cover ${getEffectsClass()}`}
+              style={{ opacity: style.backgroundOpacity / 100 }}
+              autoPlay
+              muted
+              loop
+            >
+              <source src={style.backgroundVideo} type="video/mp4" />
+            </video>
+          )}
 
-          {/* Categories */}
-          <div className="space-y-8">
-            {categories.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <p>لم يتم إضافة أصناف بعد</p>
-                <p className="text-sm">ابدأ بإضافة الأصناف والعناصر لرؤية المنيو</p>
+          <div className="relative z-10">
+            {/* Header */}
+            <div className={`flex items-center mb-6 ${
+              restaurant.logoPosition === 'top-center' ? 'justify-center text-center' :
+              restaurant.logoPosition === 'top-right' ? 'justify-end text-right' : 'justify-start text-left'
+            }`}>
+              {restaurant.logo && (
+                <img 
+                  src={restaurant.logo} 
+                  alt="Logo" 
+                  className="w-16 h-16 object-contain rounded-lg mr-4 shadow-md hover:shadow-lg transition-shadow duration-300"
+                  style={{ borderRadius: `${style.borderRadius}px` }}
+                />
+              )}
+              <div>
+                <h1 
+                  style={{ 
+                    fontSize: `${style.fontSize.title}px`,
+                    color: style.primaryColor
+                  }}
+                  className="font-bold leading-tight"
+                >
+                  {restaurant.name || 'اسم المطعم'}
+                </h1>
+                {restaurant.description && (
+                  <p className="text-sm opacity-80 mt-1">
+                    {restaurant.description}
+                  </p>
+                )}
+                {restaurant.phone && (
+                  <p className="text-sm opacity-70 mt-1">
+                    {restaurant.phone}
+                  </p>
+                )}
               </div>
-            ) : (
-              categories.map((category) => (
-                <div key={category.id}>
-                  <h2 
-                    style={{ 
-                      fontSize: `${style.fontSize.category}px`,
-                      color: style.secondaryColor,
-                      borderRadius: `${style.borderRadius}px`
-                    }}
-                    className="font-bold mb-4 pb-2 border-b"
-                    dir="rtl"
-                  >
-                    {category.name}
-                  </h2>
-                  
-                  {category.items.length === 0 ? (
-                    <p className="text-gray-500 text-sm">لا توجد عناصر في هذا الصنف</p>
-                  ) : (
-                    <div 
-                      className={getLayoutClass()}
-                      style={{ gap: style.layout !== 'custom' ? `${style.spacing}px` : undefined }}
-                    >
-                      {category.items.map((item) => {
-                        const position = itemPositions[item.id] || { x: 0, y: 0, scale: 1 };
-                        const isSelected = selectedItem === item.id;
-                        
-                        return (
-                          <div 
-                            key={item.id} 
-                            className={`
-                              ${style.layout === 'card' ? `border p-4 ${getShadowClass()}` : 
-                                style.layout === 'list' ? 'flex items-center justify-between border-b pb-2' : 
-                                style.layout === 'custom' ? `absolute border p-3 ${getShadowClass()} cursor-move` :
-                                `border p-3 ${getShadowClass()}`}
-                              ${isSelected ? 'ring-2 ring-blue-500' : ''}
-                              ${style.layout === 'custom' ? 'hover:shadow-xl' : ''}
-                              transition-all duration-200 hover:scale-105
-                            `}
-                            style={{ 
-                              borderRadius: `${style.borderRadius}px`,
-                              backgroundColor: style.layout !== 'list' ? 'rgba(255,255,255,0.9)' : 'transparent',
-                              ...(style.layout === 'custom' ? {
-                                transform: `translate(${position.x}px, ${position.y}px) scale(${position.scale})`,
-                                zIndex: isSelected ? 10 : 1
-                              } : {})
-                            }}
-                            onClick={() => style.layout === 'custom' && setSelectedItem(isSelected ? null : item.id)}
-                            onMouseDown={(e) => style.layout === 'custom' && handleItemDrag(item.id, e)}
-                          >
-                            {/* Custom Layout Controls */}
-                            {style.layout === 'custom' && isSelected && (
-                              <div className="absolute -top-8 left-0 flex gap-1 bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-lg">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleItemScale(item.id, 0.1);
-                                  }}
-                                  className="bg-blue-500 text-white p-1 rounded text-xs hover:bg-blue-600 transition-colors"
-                                >
-                                  <ZoomIn className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleItemScale(item.id, -0.1);
-                                  }}
-                                  className="bg-blue-500 text-white p-1 rounded text-xs hover:bg-blue-600 transition-colors"
-                                >
-                                  <ZoomOut className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    resetItemPosition(item.id);
-                                  }}
-                                  className="bg-gray-500 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors"
-                                >
-                                  <RotateCcw className="w-3 h-3" />
-                                </button>
-                              </div>
-                            )}
+            </div>
 
-                            {style.layout === 'list' ? (
-                              <>
-                                <div className="flex-1">
+            {/* Categories */}
+            <div className="space-y-8">
+              {categories.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p>لم يتم إضافة أصناف بعد</p>
+                  <p className="text-sm">ابدأ بإضافة الأصناف والعناصر لرؤية المنيو</p>
+                </div>
+              ) : (
+                categories.map((category) => (
+                  <div key={category.id}>
+                    <h2 
+                      style={{ 
+                        fontSize: `${style.fontSize.category}px`,
+                        color: style.secondaryColor,
+                        borderRadius: `${style.borderRadius}px`
+                      }}
+                      className="font-bold mb-4 pb-2 border-b"
+                      dir="rtl"
+                    >
+                      {category.name}
+                    </h2>
+                    
+                    {category.items.length === 0 ? (
+                      <p className="text-gray-500 text-sm">لا توجد عناصر في هذا الصنف</p>
+                    ) : (
+                      <div 
+                        className={getLayoutClass()}
+                        style={{ gap: style.layout !== 'custom' ? `${style.spacing}px` : undefined }}
+                      >
+                        {category.items.map((item) => {
+                          const position = itemPositions[item.id] || { x: 0, y: 0, scale: 1 };
+                          const isSelected = selectedItem === item.id;
+                          
+                          return (
+                            <div 
+                              key={item.id} 
+                              className={`
+                                ${style.layout === 'card' ? `border p-4 ${getShadowClass()}` : 
+                                  style.layout === 'list' ? 'flex items-center justify-between border-b pb-2' : 
+                                  style.layout === 'custom' ? `absolute border p-3 ${getShadowClass()} cursor-move` :
+                                  `border p-3 ${getShadowClass()}`}
+                                ${isSelected ? 'ring-2 ring-blue-500' : ''}
+                                ${style.layout === 'custom' ? 'hover:shadow-xl' : ''}
+                                transition-all duration-200 hover:scale-105
+                              `}
+                              style={{ 
+                                borderRadius: `${style.borderRadius}px`,
+                                backgroundColor: style.layout !== 'list' ? 'rgba(255,255,255,0.9)' : 'transparent',
+                                ...(style.layout === 'custom' ? {
+                                  transform: `translate(${position.x}px, ${position.y}px) scale(${position.scale})`,
+                                  zIndex: isSelected ? 10 : 1
+                                } : {})
+                              }}
+                              onClick={() => style.layout === 'custom' && setSelectedItem(isSelected ? null : item.id)}
+                              onMouseDown={(e) => style.layout === 'custom' && handleItemDrag(item.id, e)}
+                            >
+                              {/* Custom Layout Controls */}
+                              {style.layout === 'custom' && isSelected && (
+                                <div className="absolute -top-8 left-0 flex gap-1 bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-lg z-50">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleItemScale(item.id, 0.1);
+                                    }}
+                                    className="bg-blue-500 text-white p-1 rounded text-xs hover:bg-blue-600 transition-colors"
+                                  >
+                                    <ZoomIn className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleItemScale(item.id, -0.1);
+                                    }}
+                                    className="bg-blue-500 text-white p-1 rounded text-xs hover:bg-blue-600 transition-colors"
+                                  >
+                                    <ZoomOut className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      resetItemPosition(item.id);
+                                    }}
+                                    className="bg-gray-500 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
+
+                              {style.layout === 'list' ? (
+                                <>
+                                  <div className="flex-1">
+                                    <h3 
+                                      style={{ 
+                                        fontSize: `${style.fontSize.item}px`,
+                                        color: style.textColor
+                                      }}
+                                      className="font-semibold"
+                                      dir="rtl"
+                                    >
+                                      {item.name}
+                                    </h3>
+                                    {item.description && (
+                                      <p className="text-sm opacity-80 mt-1" dir="rtl">
+                                        {item.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {item.image && (
+                                      <img 
+                                        src={item.image} 
+                                        alt={item.name} 
+                                        className="w-12 h-12 object-cover hover:scale-110 transition-transform duration-200"
+                                        style={{ borderRadius: `${style.borderRadius}px` }}
+                                      />
+                                    )}
+                                    <span 
+                                      style={{ 
+                                        fontSize: `${style.fontSize.price}px`,
+                                        color: style.accentColor
+                                      }}
+                                      className="font-bold"
+                                    >
+                                      {showCurrencyFlag && restaurant.currency.flag} {item.price} {restaurant.currency.symbol}
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {item.image && (
+                                    <img 
+                                      src={item.image} 
+                                      alt={item.name} 
+                                      className="w-full h-32 object-cover mb-3 hover:scale-105 transition-transform duration-200"
+                                      style={{ borderRadius: `${style.borderRadius}px` }}
+                                    />
+                                  )}
                                   <h3 
                                     style={{ 
                                       fontSize: `${style.fontSize.item}px`,
                                       color: style.textColor
                                     }}
-                                    className="font-semibold"
+                                    className="font-semibold mb-2"
                                     dir="rtl"
                                   >
                                     {item.name}
                                   </h3>
                                   {item.description && (
-                                    <p className="text-sm opacity-80 mt-1" dir="rtl">
+                                    <p className="text-sm opacity-80 mb-3" dir="rtl">
                                       {item.description}
                                     </p>
                                   )}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  {item.image && (
-                                    <img 
-                                      src={item.image} 
-                                      alt={item.name} 
-                                      className="w-12 h-12 object-cover hover:scale-110 transition-transform duration-200"
-                                      style={{ borderRadius: `${style.borderRadius}px` }}
-                                    />
-                                  )}
-                                  <span 
-                                    style={{ 
-                                      fontSize: `${style.fontSize.price}px`,
-                                      color: style.accentColor
-                                    }}
-                                    className="font-bold"
-                                  >
-                                    {showCurrencyFlag && restaurant.currency.flag} {item.price} {restaurant.currency.symbol}
-                                  </span>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                {item.image && (
-                                  <img 
-                                    src={item.image} 
-                                    alt={item.name} 
-                                    className="w-full h-32 object-cover mb-3 hover:scale-105 transition-transform duration-200"
-                                    style={{ borderRadius: `${style.borderRadius}px` }}
-                                  />
-                                )}
-                                <h3 
-                                  style={{ 
-                                    fontSize: `${style.fontSize.item}px`,
-                                    color: style.textColor
-                                  }}
-                                  className="font-semibold mb-2"
-                                  dir="rtl"
-                                >
-                                  {item.name}
-                                </h3>
-                                {item.description && (
-                                  <p className="text-sm opacity-80 mb-3" dir="rtl">
-                                    {item.description}
-                                  </p>
-                                )}
-                                <div className="flex justify-between items-center">
-                                  <span 
-                                    style={{ 
-                                      fontSize: `${style.fontSize.price}px`,
-                                      color: style.accentColor
-                                    }}
-                                    className="font-bold"
-                                  >
-                                    {showCurrencyFlag && restaurant.currency.flag} {item.price} {restaurant.currency.symbol}
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
+                                  <div className="flex justify-between items-center">
+                                    <span 
+                                      style={{ 
+                                        fontSize: `${style.fontSize.price}px`,
+                                        color: style.accentColor
+                                      }}
+                                      className="font-bold"
+                                    >
+                                      {showCurrencyFlag && restaurant.currency.flag} {item.price} {restaurant.currency.symbol}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Fullscreen Preview */}
+      {isFullscreen && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex flex-col">
+          <div className="bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 text-white px-6 py-4 flex items-center justify-between">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <Maximize2 className="w-5 h-5" />
+              معاينة المنيو - شاشة كاملة
+            </h3>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPreviewScale(Math.max(0.5, previewScale - 0.1))}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded transition-colors"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </button>
+              <span className="text-lg bg-white/20 px-3 py-2 rounded">
+                {Math.round(previewScale * 100)}%
+              </span>
+              <button
+                onClick={() => setPreviewScale(Math.min(2, previewScale + 0.1))}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded transition-colors"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded transition-colors"
+              >
+                <Minimize2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-auto p-6">
+            <div 
+              className="max-w-6xl mx-auto"
+              style={{ 
+                backgroundColor: style.backgroundColor,
+                color: style.textColor,
+                fontFamily: style.fontFamily,
+                transform: `scale(${previewScale})`,
+                transformOrigin: 'top center',
+                borderRadius: `${style.borderRadius}px`,
+                minHeight: '100vh',
+                padding: '2rem',
+                position: 'relative'
+              }}
+            >
+              {/* Background Image/Video */}
+              {style.backgroundImage && (
+                <div 
+                  className={`absolute inset-0 bg-cover bg-center bg-no-repeat ${getEffectsClass()}`}
+                  style={{ 
+                    backgroundImage: `url(${style.backgroundImage})`,
+                    opacity: style.backgroundOpacity / 100,
+                    borderRadius: `${style.borderRadius}px`
+                  }}
+                />
+              )}
+              {style.backgroundVideo && (
+                <video
+                  className={`absolute inset-0 w-full h-full object-cover ${getEffectsClass()}`}
+                  style={{ 
+                    opacity: style.backgroundOpacity / 100,
+                    borderRadius: `${style.borderRadius}px`
+                  }}
+                  autoPlay
+                  muted
+                  loop
+                >
+                  <source src={style.backgroundVideo} type="video/mp4" />
+                </video>
+              )}
+
+              <div className="relative z-10">
+                {/* Header */}
+                <div className={`flex items-center mb-8 ${
+                  restaurant.logoPosition === 'top-center' ? 'justify-center text-center' :
+                  restaurant.logoPosition === 'top-right' ? 'justify-end text-right' : 'justify-start text-left'
+                }`}>
+                  {restaurant.logo && (
+                    <img 
+                      src={restaurant.logo} 
+                      alt="Logo" 
+                      className="w-20 h-20 object-contain rounded-lg mr-6 shadow-lg"
+                      style={{ borderRadius: `${style.borderRadius}px` }}
+                    />
+                  )}
+                  <div>
+                    <h1 
+                      style={{ 
+                        fontSize: `${style.fontSize.title * 1.2}px`,
+                        color: style.primaryColor
+                      }}
+                      className="font-bold leading-tight"
+                    >
+                      {restaurant.name || 'اسم المطعم'}
+                    </h1>
+                    {restaurant.description && (
+                      <p className="text-lg opacity-80 mt-2">
+                        {restaurant.description}
+                      </p>
+                    )}
+                    {restaurant.phone && (
+                      <p className="text-lg opacity-70 mt-1">
+                        {restaurant.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Categories */}
+                <div className="space-y-12">
+                  {categories.length === 0 ? (
+                    <div className="text-center py-20 text-gray-500">
+                      <p className="text-xl">لم يتم إضافة أصناف بعد</p>
+                      <p className="text-lg">ابدأ بإضافة الأصناف والعناصر لرؤية المنيو</p>
+                    </div>
+                  ) : (
+                    categories.map((category) => (
+                      <div key={category.id}>
+                        <h2 
+                          style={{ 
+                            fontSize: `${style.fontSize.category * 1.2}px`,
+                            color: style.secondaryColor,
+                            borderRadius: `${style.borderRadius}px`
+                          }}
+                          className="font-bold mb-6 pb-3 border-b-2"
+                          dir="rtl"
+                        >
+                          {category.name}
+                        </h2>
+                        
+                        {category.items.length === 0 ? (
+                          <p className="text-gray-500 text-lg">لا توجد عناصر في هذا الصنف</p>
+                        ) : (
+                          <div 
+                            className={getLayoutClass()}
+                            style={{ gap: style.layout !== 'custom' ? `${style.spacing * 1.5}px` : undefined }}
+                          >
+                            {category.items.map((item) => {
+                              const position = itemPositions[item.id] || { x: 0, y: 0, scale: 1 };
+                              const isSelected = selectedItem === item.id;
+                              
+                              return (
+                                <div 
+                                  key={item.id} 
+                                  className={`
+                                    ${style.layout === 'card' ? `border p-6 ${getShadowClass()}` : 
+                                      style.layout === 'list' ? 'flex items-center justify-between border-b pb-4' : 
+                                      style.layout === 'custom' ? `absolute border p-4 ${getShadowClass()} cursor-move` :
+                                      `border p-4 ${getShadowClass()}`}
+                                    ${isSelected ? 'ring-2 ring-blue-500' : ''}
+                                    transition-all duration-200 hover:scale-105
+                                  `}
+                                  style={{ 
+                                    borderRadius: `${style.borderRadius}px`,
+                                    backgroundColor: style.layout !== 'list' ? 'rgba(255,255,255,0.95)' : 'transparent',
+                                    ...(style.layout === 'custom' ? {
+                                      transform: `translate(${position.x}px, ${position.y}px) scale(${position.scale})`,
+                                      zIndex: isSelected ? 10 : 1
+                                    } : {})
+                                  }}
+                                  onClick={() => style.layout === 'custom' && setSelectedItem(isSelected ? null : item.id)}
+                                  onMouseDown={(e) => style.layout === 'custom' && handleItemDrag(item.id, e)}
+                                >
+                                  {style.layout === 'list' ? (
+                                    <>
+                                      <div className="flex-1">
+                                        <h3 
+                                          style={{ 
+                                            fontSize: `${style.fontSize.item * 1.1}px`,
+                                            color: style.textColor
+                                          }}
+                                          className="font-semibold"
+                                          dir="rtl"
+                                        >
+                                          {item.name}
+                                        </h3>
+                                        {item.description && (
+                                          <p className="text-base opacity-80 mt-1" dir="rtl">
+                                            {item.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-4">
+                                        {item.image && (
+                                          <img 
+                                            src={item.image} 
+                                            alt={item.name} 
+                                            className="w-16 h-16 object-cover hover:scale-110 transition-transform duration-200"
+                                            style={{ borderRadius: `${style.borderRadius}px` }}
+                                          />
+                                        )}
+                                        <span 
+                                          style={{ 
+                                            fontSize: `${style.fontSize.price * 1.1}px`,
+                                            color: style.accentColor
+                                          }}
+                                          className="font-bold"
+                                        >
+                                          {showCurrencyFlag && restaurant.currency.flag} {item.price} {restaurant.currency.symbol}
+                                        </span>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {item.image && (
+                                        <img 
+                                          src={item.image} 
+                                          alt={item.name} 
+                                          className="w-full h-40 object-cover mb-4 hover:scale-105 transition-transform duration-200"
+                                          style={{ borderRadius: `${style.borderRadius}px` }}
+                                        />
+                                      )}
+                                      <h3 
+                                        style={{ 
+                                          fontSize: `${style.fontSize.item * 1.1}px`,
+                                          color: style.textColor
+                                        }}
+                                        className="font-semibold mb-2"
+                                        dir="rtl"
+                                      >
+                                        {item.name}
+                                      </h3>
+                                      {item.description && (
+                                        <p className="text-base opacity-80 mb-4" dir="rtl">
+                                          {item.description}
+                                        </p>
+                                      )}
+                                      <div className="flex justify-between items-center">
+                                        <span 
+                                          style={{ 
+                                            fontSize: `${style.fontSize.price * 1.1}px`,
+                                            color: style.accentColor
+                                          }}
+                                          className="font-bold"
+                                        >
+                                          {showCurrencyFlag && restaurant.currency.flag} {item.price} {restaurant.currency.symbol}
+                                        </span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
