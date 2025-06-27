@@ -31,6 +31,7 @@ export interface RestaurantInfo {
   phone?: string;
   website?: string;
   currency: Currency;
+  displayStyle?: string;
 }
 
 export interface MenuStyle {
@@ -46,7 +47,7 @@ export interface MenuStyle {
     item: number;
     price: number;
   };
-  layout: 'grid' | 'card' | 'list';
+  layout: 'grid' | 'card' | 'list' | 'custom';
   itemsPerRow: number;
   backgroundImage?: string;
   backgroundVideo?: string;
@@ -54,6 +55,10 @@ export interface MenuStyle {
   borderRadius: number;
   spacing: number;
   shadowIntensity: number;
+  effects?: {
+    blur?: boolean;
+    glow?: boolean;
+  };
 }
 
 export interface MenuTemplate {

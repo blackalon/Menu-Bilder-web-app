@@ -23,7 +23,8 @@ export const useMenuBuilder = () => {
       backgroundOpacity: 100,
       borderRadius: 8,
       spacing: 16,
-      shadowIntensity: 2
+      shadowIntensity: 2,
+      effects: { blur: false, glow: false }
     },
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -42,7 +43,14 @@ export const useMenuBuilder = () => {
     setCurrentProject(prev => ({
       ...prev,
       template,
-      style: { ...template.style, backgroundOpacity: 100, borderRadius: 8, spacing: 16, shadowIntensity: 2 },
+      style: { 
+        ...template.style, 
+        backgroundOpacity: 100, 
+        borderRadius: 8, 
+        spacing: 16, 
+        shadowIntensity: 2,
+        effects: { blur: false, glow: false }
+      },
       updatedAt: new Date()
     }));
   }, []);
@@ -88,7 +96,8 @@ export const useMenuBuilder = () => {
         backgroundOpacity: 100,
         borderRadius: 8,
         spacing: 16,
-        shadowIntensity: 2
+        shadowIntensity: 2,
+        effects: { blur: false, glow: false }
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -116,17 +125,17 @@ export const useMenuBuilder = () => {
     }));
   }, []);
 
-  const exportProject = useCallback((format: 'pdf' | 'html' | 'png') => {
+  const exportProject = useCallback(async (format: 'pdf' | 'html' | 'png') => {
     switch (format) {
       case 'pdf':
-        console.log('Exporting as PDF...');
+        await exportToPDF(currentProject, showCurrencyFlag);
         break;
       case 'html':
         const htmlContent = generateHTML(currentProject, showCurrencyFlag);
         downloadFile(htmlContent, `${currentProject.name || 'menu'}.html`, 'text/html');
         break;
       case 'png':
-        console.log('Exporting as PNG...');
+        await exportToPNG(currentProject, showCurrencyFlag);
         break;
       default:
         break;
@@ -138,6 +147,7 @@ export const useMenuBuilder = () => {
     customTemplates,
     showCurrencyFlag,
     setShowCurrencyFlag,
+    setCurrentProject,
     updateRestaurantInfo,
     updateTemplate,
     updateCategories,
@@ -209,6 +219,11 @@ const generateHTML = (project: MenuProject, showCurrencyFlag: boolean): string =
             padding: 15px;
             background: rgba(255,255,255,0.9);
             box-shadow: 0 ${style.shadowIntensity}px ${style.shadowIntensity * 2}px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        .item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 ${style.shadowIntensity + 2}px ${(style.shadowIntensity + 2) * 2}px rgba(0,0,0,0.15);
         }
         .item-image {
             width: 100%;
@@ -232,6 +247,8 @@ const generateHTML = (project: MenuProject, showCurrencyFlag: boolean): string =
             color: ${style.accentColor};
             font-weight: bold;
         }
+        ${style.effects?.blur ? '.item { backdrop-filter: blur(4px); }' : ''}
+        ${style.effects?.glow ? '.item { filter: drop-shadow(0 0 8px rgba(0,0,0,0.3)); }' : ''}
     </style>
 </head>
 <body>
@@ -262,6 +279,96 @@ const generateHTML = (project: MenuProject, showCurrencyFlag: boolean): string =
 </body>
 </html>
   `;
+};
+
+const exportToPDF = async (project: MenuProject, showCurrencyFlag: boolean) => {
+  try {
+    // Create a temporary HTML element
+    const htmlContent = generateHTML(project, showCurrencyFlag);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
+    alert('حدث خطأ أثناء تصدير PDF. يرجى المحاولة مرة أخرى.');
+  }
+};
+
+const exportToPNG = async (project: MenuProject, showCurrencyFlag: boolean) => {
+  try {
+    // Create a canvas element
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = 800;
+    canvas.height = 1200;
+
+    // Fill background
+    ctx.fillStyle = project.style.backgroundColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add restaurant name
+    ctx.fillStyle = project.style.primaryColor;
+    ctx.font = `bold ${project.style.fontSize.title}px ${project.style.fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(project.restaurant.name || 'اسم المطعم', canvas.width / 2, 80);
+
+    // Add categories and items
+    let yPosition = 150;
+    project.categories.forEach(category => {
+      // Category title
+      ctx.fillStyle = project.style.secondaryColor;
+      ctx.font = `bold ${project.style.fontSize.category}px ${project.style.fontFamily}`;
+      ctx.fillText(category.name, canvas.width / 2, yPosition);
+      yPosition += 50;
+
+      // Items
+      category.items.forEach(item => {
+        ctx.fillStyle = project.style.textColor;
+        ctx.font = `${project.style.fontSize.item}px ${project.style.fontFamily}`;
+        ctx.fillText(item.name, canvas.width / 2, yPosition);
+        yPosition += 30;
+
+        if (item.description) {
+          ctx.font = `14px ${project.style.fontFamily}`;
+          ctx.fillText(item.description, canvas.width / 2, yPosition);
+          yPosition += 25;
+        }
+
+        ctx.fillStyle = project.style.accentColor;
+        ctx.font = `bold ${project.style.fontSize.price}px ${project.style.fontFamily}`;
+        const priceText = `${showCurrencyFlag && project.restaurant.currency.flag ? project.restaurant.currency.flag + ' ' : ''}${item.price} ${project.restaurant.currency.symbol}`;
+        ctx.fillText(priceText, canvas.width / 2, yPosition);
+        yPosition += 40;
+      });
+      yPosition += 20;
+    });
+
+    // Download the image
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project.name || 'menu'}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    });
+  } catch (error) {
+    console.error('Error exporting to PNG:', error);
+    alert('حدث خطأ أثناء تصدير PNG. يرجى المحاولة مرة أخرى.');
+  }
 };
 
 const downloadFile = (content: string, filename: string, contentType: string) => {
