@@ -15,6 +15,7 @@ import { ChefHat, Sparkles, Star } from 'lucide-react';
 function App() {
   const {
     currentProject,
+    setCurrentProject,
     customTemplates,
     showCurrencyFlag,
     setShowCurrencyFlag,
